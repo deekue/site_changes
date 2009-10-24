@@ -1,0 +1,25 @@
+[for item]
+<entry>
+	<title>[item.title]</title>
+	[if-any item.author]
+	<author><name>[item.author]</name></author>
+	[end]
+	<id>[item.url]</id>
+	<link href="[item.permalink]"/>
+	[if-any item.categories]
+	  [for item.categories]
+	    <category term="[item.categories.category]" />
+	  [end]
+	[end]
+	<updated>[item.date_822]</updated>
+	[if-any item.enclosure]
+	  <link rel="enclosure" type="[item.enclosure.mime_type]" href="[item.enclosure.url]" length="[item.enclosure.length]" />
+	[else]
+	  <content type="xhtml" xml:lang="en">
+	   <div xmlns="http://www.w3.org/1999/xhtml">
+	   [item.content]
+	   </div>
+	  </content>
+	[end]
+</entry>
+[end]

@@ -1,0 +1,19 @@
+Site Changes
+
+I wrote this so I could track web comics that don't have an RSS feed.
+It'll work for any website where the HTML is changing (ie not Flash or AJAX).
+
+latest version is available from the git repository
+http://www.chaosengine.net/git/site_changes.git/
+
+report bugs, request features by emailing daniel@chaosengine.net
+
+Example Usage:
+
+One feed per site
+site_changes.py -o /var/www/comics --page_link="http://www.example.com/comics/" --feed_per_site $HOME/site_changes/sites.cfg
+
+One feed for all sites
+site_changes.py -o /var/www/comics --page_title="Non-RSS Comics" --page_link="http://www.example.com/comics/" $HOME/site_changes/sites.cfg
+
+use --keep_content to help work out why a page is changing every time you check

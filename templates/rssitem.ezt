@@ -1,0 +1,25 @@
+[for item]
+<item>
+	[if-any item.author]
+	  <title>[item.author]: [item.title]</title>
+	  <dc:creator>[item.author]</dc:creator>
+	[else]
+	  <title>[item.title]</title>
+	[end]
+	<guid>[item.url]</guid>
+	<link>[item.permalink]</link>
+	[if-any item.categories]
+	  [for item.categories]
+	    <category>[item.categories.category]</category>
+	  [end]
+	[end]
+	<pubDate>[item.date_822]</pubDate>
+	[if-any item.enclosure]
+	  <enclosure url="[item.enclosure.url]" type="[item.enclosure.mime_type]" length="[item.enclosure.length]" />
+	[else]
+	  <description><![CDATA[
+	  [item.content]
+	  ]]></description>
+	[end]
+</item>
+[end]

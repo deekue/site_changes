@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>[title]</title>
+<link href="[link]"/>
+<link href="[link]" rel="self"/>
+<author>
+  <name>
+    [if-any author]
+      [author]
+    [else]
+      [title]
+    [end]
+  </name>
+</author>
+<id>[link]</id>
+<subtitle type="html">[description]</subtitle>
+<generator uri="http://www.chaosengine.net/projects/site_changes/"
+  version="1">site_changes</generator>
+<updated>[date_822]</updated>
+
+[include "atomitem.ezt"]
+
+</feed>
