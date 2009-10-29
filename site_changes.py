@@ -11,7 +11,7 @@
 
 __author__ = 'Daniel Quinlan <daniel@chaosengine.net>'
 __license__ = 'GPLv2'
-__version__ = '1'
+__version__ = '1.1'
 
 import ConfigParser
 import cPickle
@@ -59,7 +59,7 @@ class SiteChangeDetector(object):
   max_items = 50
   page_title = 'Site Changes'
   page_link = 'http://localhost/'
-  user_agent = 'Site Changes v1'
+  user_agent = 'Site Changes/%s' % __version__
   keep_content = False
 
   file_mode_exists = 'r+b'
