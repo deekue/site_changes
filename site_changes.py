@@ -22,6 +22,7 @@ import os
 import pprint
 import re
 import rfc3339
+import socket
 import sys
 import time
 from optparse import OptionParser
@@ -96,16 +97,21 @@ class SiteChangeDetector(object):
       self.AddUrl(section, url, desc, author)
 
   def _GetPage(self, host, path):
+    # TODO: replace this with urllib2?
     conn = httplib.HTTPConnection(host)
     conn.request("GET", "%s" % path, None, {'User-Agent': self.user_agent})
-    r1 = conn.getresponse()
-    if r1.status == httplib.OK:
-      page = r1.read()
-    else:
-      DEBUG("'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason))
+    try:
+      r1 = conn.getresponse()
+      if r1.status == httplib.OK:
+	page = r1.read()
+      else:
+	DEBUG("'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason))
+	page = None
+    except socket.error, msg:
+      DEBUG("'%s%s' download failed: %s" % (host, path, msg))
       page = None
-
-    conn.close()
+    finally:
+      conn.close()
     return page
 
   def Process(self):
