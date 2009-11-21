@@ -101,15 +101,16 @@ class SiteChangeDetector(object):
     conn = httplib.HTTPConnection(host)
     conn.request("GET", "%s" % path, None, {'User-Agent': self.user_agent})
     try:
-      r1 = conn.getresponse()
-      if r1.status == httplib.OK:
-	page = r1.read()
-      else:
-	DEBUG("'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason))
+      try:
+	r1 = conn.getresponse()
+	if r1.status == httplib.OK:
+	  page = r1.read()
+	else:
+	  DEBUG("'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason))
+	  page = None
+      except socket.error, msg:
+	DEBUG("'%s%s' download failed: %s" % (host, path, msg))
 	page = None
-    except socket.error, msg:
-      DEBUG("'%s%s' download failed: %s" % (host, path, msg))
-      page = None
     finally:
       conn.close()
     return page
