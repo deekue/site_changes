@@ -11,7 +11,7 @@
 
 __author__ = 'Daniel Quinlan <daniel@chaosengine.net>'
 __license__ = 'GPLv2'
-__version__ = '1.1'
+__version__ = '1.2'
 
 import ConfigParser
 import cPickle
@@ -106,6 +106,9 @@ class SiteChangeDetector(object):
 	r1 = conn.getresponse()
 	if r1.status == httplib.OK:
 	  page = r1.read()
+	elif r1.status == httplib.MOVED_PERMANENTLY:
+	  print "'%s%s' %s %s to %s" % (host, path, r1.status, r1.reason,
+              r1.getheader('Location'))
 	else:
 	  print "'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason)
       except Exception, msg:
