@@ -97,6 +97,7 @@ class SiteChangeDetector(object):
       self.AddUrl(section, url, desc, author)
 
   def _GetPage(self, host, path):
+    page = None
     # TODO: replace this with urllib2?
     conn = httplib.HTTPConnection(host)
     try:
@@ -106,11 +107,9 @@ class SiteChangeDetector(object):
 	if r1.status == httplib.OK:
 	  page = r1.read()
 	else:
-	  DEBUG("'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason))
-	  page = None
-      except (socket.error, socket.gaierror), msg:
+	  print "'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason)
+      except Exception, msg:
 	DEBUG("'%s%s' download failed: %s" % (host, path, msg))
-	page = None
     finally:
       conn.close()
     return page
