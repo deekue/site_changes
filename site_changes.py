@@ -157,29 +157,11 @@ class SiteChangeDetector(object):
 
   def ReadCache(self, file_name):
     abs_file_name = os.path.join(self.cache_dir, file_name)
-    data = None
-    try:
-      DEBUG("read cache: %s" % abs_file_name)
-      file_handle = open(abs_file_name, 'rb')
-      data = cPickle.load(file_handle)
-      file_handle.close()
-    except (IOError, EOFError), err:
-      DEBUG("failed to read cache %s: [%s] %s" % (abs_file_name, err.errno,
-	err.strerror))
-      data = None
-
-    return data
-
+    return ReadCacheFile(abs_file_name)
+    
   def WriteCache(self, file_name, data):
     abs_file_name = os.path.join(self.cache_dir, file_name)
-    try:
-      DEBUG("write cache %s" % abs_file_name)
-      file_handle = open(abs_file_name, 'wb')
-      cPickle.dump(data, file_handle)
-      file_handle.close()
-    except IOError, err:
-      DEBUG("failed to write cache %s: [%s] %s" % (abs_file_name,
-	    err.errno, err.strerror))
+    WriteCacheFile(abs_file_name, data)
   
   def GeneratePage(self, output_filename, urls, page_title, page_desc,
       page_author):
@@ -256,6 +238,31 @@ class SiteChangeDetector(object):
 	if output_file:
 	  output_file.close()
 
+
+def ReadCacheFile(file_name):
+  data = None
+  try:
+    DEBUG("read cache: %s" % file_name)
+    file_handle = open(file_name, 'rb')
+    data = cPickle.load(file_handle)
+    file_handle.close()
+  except (IOError, EOFError), err:
+    DEBUG("failed to read cache %s: [%s] %s" % (file_name, err.errno,
+	err.strerror))
+    data = None
+
+  return data
+
+def WriteCacheFile(file_name, data):
+  try:
+    DEBUG("write cache %s" % file_name)
+    file_handle = open(file_name, 'wb')
+    cPickle.dump(data, file_handle)
+    file_handle.close()
+  except IOError, err:
+    DEBUG("failed to write cache %s: [%s] %s" % (file_name,
+	    err.errno, err.strerror))
+  
 
 if __name__ == '__main__':
   usage = "usage: %prog [options] <url | config file>"
