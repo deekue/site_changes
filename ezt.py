@@ -224,14 +224,9 @@ Directives
 
 import string
 import re
-from types import StringType, IntType, FloatType, LongType
 import os
-import urllib
-try:
-  import cStringIO
-except ImportError:
-  import StringIO
-  cStringIO = StringIO
+import urllib.request, urllib.parse, urllib.error
+import io
 
 #
 # Formatting types
@@ -265,7 +260,7 @@ _re_args = re.compile(r'"(?:[^\\"]|\\.)*"|[-\w.]+')
 
 # block commands and their argument counts
 _block_cmd_specs = { 'if-index':2, 'for':1, 'is':2, 'define':1, 'format':1 }
-_block_cmds = _block_cmd_specs.keys()
+_block_cmds = list(_block_cmd_specs.keys())
 
 # two regular expresssions for compressing whitespace. the first is used to
 # compress any whitespace including a newline into a single newline. the
@@ -475,13 +470,14 @@ class Template:
     to the file object 'fp' and functions are called.
     """
     for step in program:
-      if isinstance(step, StringType):
+      if isinstance(step, str):
         fp.write(step)
       else:
         method, method_args, filename, line_number = step
         method(method_args, fp, ctx, filename, line_number)
 
-  def _cmd_print(self, (transforms, valref), fp, ctx, filename, line_number):
+  def _cmd_print(self, xxx_todo_changeme, fp, ctx, filename, line_number):
+    (transforms, valref) = xxx_todo_changeme
     value = _get_value(valref, ctx, filename, line_number)
     # if the value has a 'read' attribute, then it is a stream: copy it
     if hasattr(value, 'read'):
@@ -497,8 +493,9 @@ class Template:
         value = t(value)
       fp.write(value)
 
-  def _cmd_subst(self, (transforms, valref, args), fp, ctx, filename,
+  def _cmd_subst(self, xxx_todo_changeme1, fp, ctx, filename,
                  line_number):
+    (transforms, valref, args) = xxx_todo_changeme1
     fmt = _get_value(valref, ctx, filename, line_number)
     parts = _re_subst.split(fmt)
     for i in range(len(parts)):
@@ -513,16 +510,18 @@ class Template:
         piece = t(piece)
       fp.write(piece)
 
-  def _cmd_include(self, (valref, reader, printer), fp, ctx, filename,
+  def _cmd_include(self, xxx_todo_changeme2, fp, ctx, filename,
                    line_number):
+    (valref, reader, printer) = xxx_todo_changeme2
     fname = _get_value(valref, ctx, filename, line_number)
     ### note: we don't have the set of for_names to pass into this parse.
     ### I don't think there is anything to do but document it
     self._execute(self._parse(reader.read_other(fname), base_printer=printer),
                   fp, ctx)
 
-  def _cmd_insertfile(self, (valref, reader, printer), fp, ctx, filename,
+  def _cmd_insertfile(self, xxx_todo_changeme3, fp, ctx, filename,
                       line_number):
+    (valref, reader, printer) = xxx_todo_changeme3
     fname = _get_value(valref, ctx, filename, line_number)
     fp.write(reader.read_other(fname).text)
 
@@ -573,7 +572,7 @@ class Template:
     ((valref,), unused, section) = args
     list = _get_value(valref, ctx, filename, line_number)
     refname = valref[0]
-    if isinstance(list, StringType):
+    if isinstance(list, str):
       raise NeedSequenceError(refname, filename, line_number)
     ctx.for_index[refname] = idx = [ list, 0 ]
     for item in list:
@@ -583,7 +582,7 @@ class Template:
 
   def _cmd_define(self, args, fp, ctx, filename, line_number):
     ((name,), unused, section) = args
-    valfp = cStringIO.StringIO()
+    valfp = io.StringIO()
     if section is not None:
       self._execute(section, valfp, ctx)
     ctx.defines[name] = valfp.getvalue()
@@ -643,7 +642,7 @@ def _prepare_ref(refname, for_names, file_args):
 
   return refname, start, rest
 
-def _get_value((refname, start, rest), ctx, filename, line_number):
+def _get_value(xxx_todo_changeme4, ctx, filename, line_number):
   """(refname, start, rest) -> a prepared `value reference' (see above).
   ctx -> an execution context instance.
 
@@ -651,15 +650,16 @@ def _get_value((refname, start, rest), ctx, filename, line_number):
   for blocks take precedence over data dictionary members with the 
   same name.
   """
+  (refname, start, rest) = xxx_todo_changeme4
   if rest is None:
     # it was a string constant
     return start
 
   # get the starting object
-  if ctx.for_index.has_key(start):
+  if start in ctx.for_index:
     list, idx = ctx.for_index[start]
     ob = list[idx]
-  elif ctx.defines.has_key(start):
+  elif start in ctx.defines:
     ob = ctx.defines[start]
   elif hasattr(ctx.data, start):
     ob = getattr(ctx.data, start)
@@ -674,7 +674,7 @@ def _get_value((refname, start, rest), ctx, filename, line_number):
       raise UnknownReference(refname, filename, line_number)
 
   # make sure we return a string instead of some various Python types
-  if isinstance(ob, (IntType, FloatType, LongType)):
+  if not isinstance(ob, str):
     return str(ob)
   if ob is None:
     return ''
@@ -695,7 +695,7 @@ REPLACE_JS_MAP = (
 
 # Various unicode whitespace
 REPLACE_JS_UNICODE_MAP = (
-  (u'\u0085', r'\u0085'), (u'\u2028', r'\u2028'), (u'\u2029', r'\u2029'),
+  ('\u0085', r'\u0085'), ('\u2028', r'\u2028'), ('\u2029', r'\u2029'),
 )
 
 # Why not cgi.escape? It doesn't do single quotes which are occasionally
@@ -708,7 +708,7 @@ REPLACE_HTML_MAP = (
 def _js_escape(s):
   s = _replace(s, REPLACE_JS_MAP)
   ### perhaps attempt to coerce the string to unicode and then replace?
-  if isinstance(s, unicode):
+  if isinstance(s, str):
     s = _replace(s, REPLACE_JS_UNICODE_MAP)
   return s
 
@@ -719,9 +719,9 @@ def _url_escape(s):
   ### quote_plus barfs on non-ASCII characters. According to
   ### http://www.w3.org/International/O-URL-code.html URIs should be
   ### UTF-8 encoded first.
-  if isinstance(s, unicode):
+  if isinstance(s, str):
     s = s.encode('utf8')
-  return urllib.quote_plus(s)
+  return urllib.parse.quote_plus(s)
 
 FORMATTERS = {
   FORMAT_RAW: None,

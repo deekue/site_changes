@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # take a list of sites and check if they have changed since last visited
 # if so output a well formed RSS document of items with links to the changed sites
@@ -11,13 +11,13 @@
 
 __author__ = 'Daniel Quinlan <daniel@chaosengine.net>'
 __license__ = 'GPLv2'
-__version__ = '1.2'
+__version__ = '1.2.1'
 
-import ConfigParser
-import cPickle
-import email.Utils
+import configparser
+import pickle
+import email.utils
 import ezt
-import httplib
+import http.client
 import os
 import pprint
 import re
@@ -40,7 +40,7 @@ DEBUG_ENABLED = False
 def DEBUG(message):
   if DEBUG_ENABLED:
     if isinstance(message, str):
-      print >>sys.stderr, message
+      print(message, file=sys.stderr)
     else:
       pprint.pprint(message, stream=sys.stderr)
 
@@ -48,7 +48,7 @@ class EztRow(object):
   """Ezt is a PITA.  you can't use a dict, it expects an object."""
 
   def __init__(self, items):
-   for key,value in items.iteritems():
+   for key,value in items.items():
      self.__setattr__(key, value)
 
 class SiteChangeDetector(object):
@@ -74,45 +74,45 @@ class SiteChangeDetector(object):
 
   def AddUrl(self, title, url, desc='', author=''):
     self._urls += (
-	{'title': title,
-	 'url': url,
-	 'desc': desc,
-	 'author': author,
-	 },)
+        {'title': title,
+         'url': url,
+         'desc': desc,
+         'author': author,
+         },)
 
   def LoadFromFile(self, filename):
-    config = ConfigParser.SafeConfigParser()
+    config = configparser.SafeConfigParser()
     config.read(filename)
 
     for section in config.sections():
       url = config.get(section, 'url')
       try:
-	desc = config.get(section, 'desc')
-      except ConfigParser.NoOptionError:
-	desc = section
+        desc = config.get(section, 'desc')
+      except configparser.NoOptionError:
+        desc = section
       try:
-	author = config.get(section, 'author')
-      except ConfigParser.NoOptionError:
-	author = ''
+        author = config.get(section, 'author')
+      except configparser.NoOptionError:
+        author = ''
       self.AddUrl(section, url, desc, author)
 
   def _GetPage(self, host, path):
     page = None
     # TODO: replace this with urllib2?
-    conn = httplib.HTTPConnection(host)
+    conn = http.client.HTTPConnection(host)
     try:
       try:
-	conn.request("GET", "%s" % path, None, {'User-Agent': self.user_agent})
-	r1 = conn.getresponse()
-	if r1.status == httplib.OK:
-	  page = r1.read()
-	elif r1.status == httplib.MOVED_PERMANENTLY:
-	  print "'%s%s' %s %s to %s" % (host, path, r1.status, r1.reason,
-              r1.getheader('Location'))
-	else:
-	  print "'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason)
-      except Exception, msg:
-	DEBUG("'%s%s' download failed: %s" % (host, path, msg))
+        conn.request("GET", "%s" % path, None, {'User-Agent': self.user_agent})
+        r1 = conn.getresponse()
+        if r1.status == http.client.OK:
+          page = r1.read()
+        elif r1.status == http.client.MOVED_PERMANENTLY:
+          print("'%s%s' %s %s to %s" % (host, path, r1.status, r1.reason,
+              r1.getheader('Location')))
+        else:
+          print("'%s%s' download failed: %s %s" % (host, path, r1.status, r1.reason))
+      except Exception as msg:
+        DEBUG("'%s%s' download failed: %s" % (host, path, msg))
     finally:
       conn.close()
     return page
@@ -128,10 +128,10 @@ class SiteChangeDetector(object):
       DEBUG('\nworking on %s' % url)
 
       try:
-	(protocol, junk, host, path) = url.split('/', 3)
-      except ValueError, msg:
-	DEBUG("bad config at line %d\n%s" % (index, msg))
-	continue
+        (protocol, junk, host, path) = url.split('/', 3)
+      except ValueError as msg:
+        DEBUG("bad config at line %d\n%s" % (index, msg))
+        continue
 
       content = self._GetPage(host, "/" + path)
       if content == None:
@@ -140,15 +140,15 @@ class SiteChangeDetector(object):
       file_hash = self.ReadCache(cache_filename)
 
       if content_hash == file_hash:
-	DEBUG('page unchanged')
-	continue
+        DEBUG('page unchanged')
+        continue
 
       DEBUG('page changed')
 
       if self.keep_content:
-	if os.path.exists(content_current):
-	  os.rename(content_current, content_previous)
-	self.WriteCache(content_current, content)
+        if os.path.exists(content_current):
+          os.rename(content_current, content_previous)
+        self.WriteCache(content_current, content)
 
       self._changed_urls.insert(0, index)
       self.WriteCache(cache_filename, content_hash)
@@ -173,11 +173,11 @@ class SiteChangeDetector(object):
       change_time = rfc3339.rfc3339(time.time())
 
     data = {'title': page_title,
-	    'link': '%s%s' % (self.page_link, output_filename_basename),
-	    'description': page_desc,
-	    'date_822': change_time,
-	    'author': page_author,
-	   }
+            'link': '%s%s' % (self.page_link, output_filename_basename),
+            'description': page_desc,
+            'date_822': change_time,
+            'author': page_author,
+           }
 
     data['item'] = self.ReadCache(page_cache_filename)
     if not data['item']:
@@ -186,14 +186,14 @@ class SiteChangeDetector(object):
 
     for index in urls:
       item = {'title': self._urls[index]['title'],
-	      'url': self._urls[index]['url'],
-	      'permalink': self._urls[index]['url'],
-	      'date_822': change_time,
-	      'content': 'Change detected on %s' % change_time,
-	      'author': self._urls[index]['author'],
-	      'categories': None, # TODO add this?
-	      'enclosure': None, # TODO add scraping support?
-	     }
+              'url': self._urls[index]['url'],
+              'permalink': self._urls[index]['url'],
+              'date_822': change_time,
+              'content': 'Change detected on %s' % change_time,
+              'author': self._urls[index]['author'],
+              'categories': None, # TODO add this?
+              'enclosure': None, # TODO add scraping support?
+             }
       data['item'].insert(0, EztRow(item))
 
     # truncate rss items list to MAX
@@ -209,21 +209,21 @@ class SiteChangeDetector(object):
     template = ezt.Template(os.path.join(template_dir, template_name))
 
     output_filename_base = os.path.join(options.output_dir, '%%s.%s' %
-	options.output_type)
+        options.output_type)
 
     if feed_per_site:
       output_files = {}
       for index in self._changed_urls:
-	page_title = self._urls[index]['title']
-	output_file = re.sub('[^\w\d._-]', '.', page_title.lower())
-	output_file = output_filename_base % output_file
-	output_files[output_file] = (page_title, self._urls[index]['desc'],
-	    self._urls[index]['author'], (index,))
+        page_title = self._urls[index]['title']
+        output_file = re.sub('[^\w\d._-]', '.', page_title.lower())
+        output_file = output_filename_base % output_file
+        output_files[output_file] = (page_title, self._urls[index]['desc'],
+            self._urls[index]['author'], (index,))
     else:
       output_files = {output_filename_base % self.output_file:
-	  (self.page_title, self.page_title, None, self._changed_urls)}
+          (self.page_title, self.page_title, None, self._changed_urls)}
 
-    for (output_filename, data) in output_files.iteritems():
+    for (output_filename, data) in output_files.items():
       page_title = data[0]
       desc = data[1]
       author = data[2]
@@ -232,11 +232,11 @@ class SiteChangeDetector(object):
 
       output_file = open(output_filename, 'wb')
       try:
-	DEBUG("writing output to %s" % output_file.name)
-	template.generate(output_file, EztRow(data))
+        DEBUG("writing output to %s" % output_file.name)
+        template.generate(output_file, EztRow(data))
       finally:
-	if output_file:
-	  output_file.close()
+        if output_file:
+          output_file.close()
 
 
 def ReadCacheFile(file_name):
@@ -244,11 +244,11 @@ def ReadCacheFile(file_name):
   try:
     DEBUG("read cache: %s" % file_name)
     file_handle = open(file_name, 'rb')
-    data = cPickle.load(file_handle)
+    data = pickle.load(file_handle)
     file_handle.close()
-  except (IOError, EOFError), err:
+  except (IOError, EOFError) as err:
     DEBUG("failed to read cache %s: [%s] %s" % (file_name, err.errno,
-	err.strerror))
+        err.strerror))
     data = None
 
   return data
@@ -257,11 +257,11 @@ def WriteCacheFile(file_name, data):
   try:
     DEBUG("write cache %s" % file_name)
     file_handle = open(file_name, 'wb')
-    cPickle.dump(data, file_handle)
+    pickle.dump(data, file_handle)
     file_handle.close()
-  except IOError, err:
+  except IOError as err:
     DEBUG("failed to write cache %s: [%s] %s" % (file_name,
-	    err.errno, err.strerror))
+            err.errno, err.strerror))
   
 
 if __name__ == '__main__':
@@ -276,25 +276,25 @@ if __name__ == '__main__':
   parser.add_option("-f", "--output_file", dest="output_file",
                     metavar="FILE", default="site_changes",
                     help=("basename of output file.  extension is based on"
-		          "--output_type. [%default]"))
+                          "--output_type. [%default]"))
   parser.add_option("-t", "--output_type", dest="output_type",
                     default=SiteChangeDetector.output_type,
-		    help="output type: rss, atom [%default]")
+                    help="output type: rss, atom [%default]")
   parser.add_option("--page_title", dest="page_title",
                     default=SiteChangeDetector.page_title,
-		    help="Page title [%default]")
+                    help="Page title [%default]")
   parser.add_option("--page_link", dest="page_link",
                     default=SiteChangeDetector.page_link,
-		    help="base url for the rss file [%default]")
+                    help="base url for the rss file [%default]")
   parser.add_option("--max_items", dest="max_items",
                     default=SiteChangeDetector.max_items,
-		    help="maximum items to keep in feed [%default]")
+                    help="maximum items to keep in feed [%default]")
   parser.add_option("--user_agent", dest="user_agent",
                     default=SiteChangeDetector.user_agent,
-		    help="User-Agent header to send [%default]")
+                    help="User-Agent header to send [%default]")
   parser.add_option("--keep_content", dest="keep_content",
                     action="store_true",
-		    default=SiteChangeDetector.keep_content,
+                    default=SiteChangeDetector.keep_content,
                     help="keep content of site [%default]")
   parser.add_option("--debug", dest="debug",
                     action="store_true", default=False,
